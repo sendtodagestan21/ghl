@@ -1,0 +1,14 @@
+import express, { Request, Response, NextFunction } from "express";
+import { config } from "./config";
+import { logger } from "./logger";
+import healthRouter from "./routes/health";
+import messageRouter from "./routes/message";
+const app = express();
+app.use(express.json({ limit: "1mb" }));
+app.use((req: Request, _res: Response, next: NextFunction) => { logger.debug(`${req.method} ${req.path}`); next(); });
+app.use("/", healthRouter);
+app.use("/", messageRouter);
+app.use((_req: Request, res: Response) => res.status(404).json({ error: "Not found" }));
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => { logger.error("Unhandled", { message: err.message }); res.status(500).json({ error: "Internal server error" }); });
+app.listen(config.port, () => logger.info("respond-ghl-middleware started", { port: config.port, locationId: config.ghlLocationId }));
+export default app;
